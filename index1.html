@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Rose Day | V-Factor Studios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --crimson: #800020;
+            --bright-red: #ff0a43;
+            --gold: #f3cf7a;
+            --gold-gradient: linear-gradient(135deg, #f3cf7a 0%, #d4a373 100%);
+            --bg: #050505;
+            --box-bg: rgba(20, 20, 20, 0.95);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg);
+            color: white;
+            font-family: 'Lato', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            transition: background-color 0.5s;
+        }
+
+        /* --- BACKGROUND CANVAS --- */
+        canvas { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
+
+        /* --- UI CONTAINER --- */
+        .interface {
+            position: relative; z-index: 10;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+        }
+
+        .screen {
+            display: none; width: 85%; max-width: 600px;
+            flex-direction: column; align-items: center;
+            animation: fadeIn 1s ease-out forwards;
+        }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-family: 'Great Vibes', cursive;
+            color: var(--bright-red);
+            font-size: 4rem; margin: 0;
+            text-shadow: 0 0 15px rgba(255, 10, 67, 0.4);
+        }
+        h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.2rem; margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        p { color: #ccc; font-size: 1.1rem; }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+        button:hover { background: var(--gold); color: black; box-shadow: 0 0 15px var(--gold); }
+
+        /* --- GAME 1: SUNLIGHT --- */
+        #growth-stage {
+            height: 300px; width: 100%;
+            display: flex; flex-direction: column-reverse;
+            align-items: center; justify-content: flex-start;
+            position: relative;
+        }
+        .stem {
+            width: 6px; background: linear-gradient(to top, #0f3d0f, #2d5a27);
+            transition: height 0.1s linear; border-radius: 4px;
+        }
+        .bloom {
+            font-size: 0px; line-height: 1; transition: all 0.5s ease;
+            filter: drop-shadow(0 0 15px var(--bright-red)); z-index: 5;
+        }
+        #seed {
+            width: 30px; height: 30px; background: #5d4037;
+            border-radius: 50% 50% 5px 5px; margin-top: -2px;
+        }
+        
+        /* Sunlight Button */
+        #sun-btn {
+            width: 70px; height: 70px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%;
+            border: 4px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.5);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 30px; cursor: pointer;
+            margin-top: 20px; user-select: none;
+            transition: transform 0.1s;
+            position: relative;
+        }
+        #sun-btn:active { transform: scale(0.95); }
+        
+        /* Light Beams */
+        .beam {
+            position: absolute; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, rgba(255,215,0,0.2) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+            z-index: -1;
+        }
+        .beam.active { opacity: 1; }
+
+        /* --- GAME 2: MESSAGES --- */
+        .msg-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 15px; width: 100%; perspective: 1000px;
+        }
+        .msg-box {
+            background: var(--box-bg); border: 1px solid #444;
+            padding: 20px 10px; min-height: 80px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden;
+        }
+        /* Decorative Corners */
+        .msg-box::before {
+            content: ''; position: absolute; top: 5px; left: 5px;
+            width: 15px; height: 15px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold);
+        }
+        .msg-box::after {
+            content: ''; position: absolute; bottom: 5px; right: 5px;
+            width: 15px; height: 15px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold);
+        }
+
+        .msg-box:hover { border-color: var(--bright-red); transform: translateY(-5px); }
+        .msg-box:last-child { grid-column: span 2; width: 60%; margin: 0 auto; } /* Center 5th */
+
+        .msg-box.hidden { opacity: 0; transform: scale(0.8); pointer-events: none; }
+        .msg-box.selected {
+            grid-column: span 2; width: 100%; height: auto;
+            background: rgba(80, 0, 20, 0.9); border: 2px solid var(--gold);
+            transform: scale(1.05); z-index: 50; cursor: default;
+        }
+
+        .box-cover { font-family: 'Great Vibes', cursive; font-size: 1.8rem; color: var(--gold); }
+        .box-content { 
+            display: none; font-family: 'Great Vibes', cursive; 
+            font-size: 1.6rem; color: white; line-height: 1.4; padding: 10px; 
+            animation: textFade 0.5s ease-in;
+        }
+        @keyframes textFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- DARK LEVER --- */
+        #darkness-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 900; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 1s;
+        }
+        .lever-track {
+            width: 50px; height: 220px; background: #222; border-radius: 25px;
+            position: relative; border: 2px solid #444; box-shadow: inset 0 0 10px #000;
+        }
+        .lever-handle {
+            width: 44px; height: 44px; background: radial-gradient(circle, #ff0a43, #800020);
+            border-radius: 50%; position: absolute; left: 3px; top: 3px;
+            cursor: grab; box-shadow: 0 0 20px var(--bright-red);
+            display: flex; justify-content: center; align-items: center; font-size: 20px;
+        }
+
+        /* --- FINALE --- */
+        #final-container {
+            position: relative; width: 100%; height: 400px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Golden Locket */
+        .locket-svg {
+            width: 120px; height: 120px;
+            filter: drop-shadow(0 0 20px rgba(243, 207, 122, 0.6));
+            animation: heartPulse 2s infinite ease-in-out;
+            z-index: 5; margin-bottom: 30px;
+        }
+        @keyframes heartPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* Final Message Box */
+        .final-msg-box {
+            width: 220px; height: 60px;
+            background: linear-gradient(135deg, #2b0a10, #4a0d18);
+            border: 2px solid var(--gold); border-radius: 15px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; z-index: 20; position: relative;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .final-msg-box.open {
+            width: 95%; max-width: 500px; height: auto; min-height: 250px;
+            background: rgba(10, 5, 5, 0.95);
+            border-color: var(--bright-red);
+            cursor: default; padding: 20px;
+        }
+
+        .click-text { font-family: 'Cinzel', serif; color: var(--gold); animation: pulse 1.5s infinite; }
+        
+        .final-content { 
+            display: none; text-align: center;
+        }
+        .final-text {
+            font-family: 'Great Vibes', cursive; font-size: 1.5rem; 
+            color: #eee; line-height: 1.6;
+        }
+        
+        /* Corner Roses */
+        .corner-rose {
+            position: fixed; font-size: 25px; z-index: 8; opacity: 0;
+            transition: opacity 1s;
+        }
+        .tl { top: 20px; left: 20px; } .tr { top: 20px; right: 20px; }
+        .bl { bottom: 20px; left: 20px; } .br { bottom: 20px; right: 20px; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="corner-roses">
+        <div class="corner-rose tl">🌸</div>
+        <div class="corner-rose tr">🌸</div>
+        <div class="corner-rose bl">🌸</div>
+        <div class="corner-rose br">🌸</div>
+    </div>
+
+    <div class="interface">
+        
+        <div id="screen-intro" class="screen active">
+            <h1>Rose Day</h1>
+            <h2>A journey to the heart...</h2>
+            <p>Some things in life grow only with warmth.</p>
+            <button onclick="nextScreen('screen-game1')">Begin</button>
+        </div>
+
+        <div id="screen-game1" class="screen">
+            <h2>Hold to send Warmth</h2>
+            <div id="growth-stage">
+                <div class="beam" id="beam-fx"></div>
+                
+                <div id="bloom" class="bloom">🌹</div>
+                <div id="stem" class="stem" style="height: 0px;"></div>
+                <div id="seed"></div>
+            </div>
+            
+            <div id="sun-btn" 
+                 onmousedown="startWarmth()" onmouseup="stopWarmth()" 
+                 ontouchstart="startWarmth()" ontouchend="stopWarmth()">
+                ☀️
+            </div>
+            <p id="warmth-msg" style="font-size: 0.9rem; margin-top: 15px;">Hold the sun...</p>
+        </div>
+
+        <div id="screen-game2" class="screen">
+            <h2>Why you deserve this...</h2>
+            <div class="msg-grid" id="msg-grid"></div>
+            <button id="btn-lever" style="display:none;" onclick="startLeverSequence()">One more thing...</button>
+        </div>
+
+        <div id="screen-final" class="screen">
+            <div id="final-container">
+                <svg class="locket-svg" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#f3cf7a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#d4a373;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M50 30 C35 15 10 35 25 60 C35 75 50 90 50 90 C50 90 65 75 75 60 C90 35 65 15 50 30 Z" 
+                          fill="url(#goldGrad)" stroke="#b8860b" stroke-width="2" />
+                    <path d="M48 55 h4 v6 h-4 z M50 50 a3 3 0 1 0 0 6 a3 3 0 1 0 0 -6" fill="#333" />
+                </svg>
+
+                <div class="final-msg-box" id="final-box" onclick="revealHeart()">
+                    <span class="click-text" id="click-text">Open My Heart</span>
+                    <div class="final-content" id="final-content">
+                        <div class="final-text">
+                            "You are like a rose—not just for how beautiful you are, but for how deeply you make feelings bloom. There’s softness in your presence, warmth in your care, and comfort in the way you stay. Even your quiet moments speak love. Like a rose, you grow with time, patience, and honesty, and anyone lucky enough to hold your heart understands its true value. 🌹"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="darkness-overlay">
+        <p style="color: #666; margin-bottom: 20px;">Bring back the light...</p>
+        <div class="lever-track" id="lever-track">
+            <div class="lever-handle" id="lever-handle">🔻</div>
+        </div>
+    </div>
+
+    <script>
+        /* --- BACKGROUND PETALS --- */
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let petals = [];
+
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
+
+        class Petal {
+            constructor() { this.reset(); this.y = Math.random() * height; }
+            reset() {
+                this.x = Math.random() * width; this.y = -20;
+                this.size = Math.random() * 8 + 4;
+                this.speedY = Math.random() * 1.5 + 0.5;
+                this.sway = Math.random() * 2;
+                this.color = Math.random() > 0.3 ? '#800020' : '#5c0015'; // Varied crimson
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += Math.sin(this.y * 0.005 + this.sway) * 0.5;
+                if (this.y > height) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = this.color; ctx.globalAlpha = 0.7;
+                ctx.beginPath(); 
+                ctx.moveTo(this.x, this.y);
+                ctx.bezierCurveTo(this.x + this.size/2, this.y - this.size/2, this.x + this.size, this.y, this.x, this.y + this.size);
+                ctx.bezierCurveTo(this.x - this.size, this.y, this.x - this.size/2, this.y - this.size/2, this.x, this.y);
+                ctx.fill();
+            }
+        }
+        for (let i = 0; i < 50; i++) petals.push(new Petal());
+        function animate() { ctx.clearRect(0,0,width,height); petals.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(animate); }
+        animate();
+
+
+        /* --- SCREEN NAVIGATION --- */
+        function nextScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'screen-game2') setupMsgGame();
+        }
+
+
+        /* --- GAME 1: SUNLIGHT HOLD --- */
+        let warmthLevel = 0;
+        let warmthInterval;
+        const stem = document.getElementById('stem');
+        const bloom = document.getElementById('bloom');
+        const beam = document.getElementById('beam-fx');
+
+        function startWarmth() {
+            if(warmthLevel >= 100) return;
+            beam.classList.add('active');
+            warmthInterval = setInterval(() => {
+                warmthLevel += 1;
+                // Visual Growth
+                let height = (warmthLevel / 100) * 250;
+                stem.style.height = height + 'px';
+                
+                // Warm glow on background
+                let opacity = warmthLevel / 200;
+                document.body.style.backgroundColor = `rgba(30, 10, 5, 1)`;
+
+                if(warmthLevel >= 100) {
+                    clearInterval(warmthInterval);
+                    bloom.style.fontSize = "100px";
+                    bloom.style.marginTop = "-20px";
+                    document.getElementById('warmth-msg').innerText = "Love has bloomed.";
+                    setTimeout(() => nextScreen('screen-game2'), 2000);
+                }
+            }, 50); // Speed of growth
+        }
+
+        function stopWarmth() {
+            clearInterval(warmthInterval);
+            beam.classList.remove('active');
+        }
+
+
+        /* --- GAME 2: MESSAGES --- */
+        const messages = [
+            "For loving softly, caring deeply, and making hearts feel chosen without ever asking for anything.",
+            "A rose suits you because beauty shows in tenderness, sincerity, and the quiet way love feels safe.",
+            "You earn this for being gentle with emotions, honest with feelings, and warm without even trying.",
+            "This rose is for the soul that stays, understands unspoken words, and makes closeness feel natural and rare.",
+            "Because love feels calmer, deeper, and more real whenever you are near."
+        ];
+
+        function setupMsgGame() {
+            const grid = document.getElementById('msg-grid');
+            grid.innerHTML = '';
+            messages.forEach((txt, i) => {
+                let div = document.createElement('div');
+                div.className = 'msg-box';
+                div.innerHTML = `<div class="box-cover">Tap to read</div><div class="box-content">${txt}</div>`;
+                div.onclick = () => selectBox(div);
+                grid.appendChild(div);
+            });
+        }
+
+        function selectBox(target) {
+            document.querySelectorAll('.msg-box').forEach(b => {
+                if(b === target) {
+                    b.classList.add('selected');
+                    b.querySelector('.box-cover').style.display = 'none';
+                    b.querySelector('.box-content').style.display = 'block';
+                } else {
+                    b.classList.add('hidden');
+                }
+            });
+            document.getElementById('btn-lever').style.display = 'block';
+        }
+
+
+        /* --- LEVER LOGIC --- */
+        function startLeverSequence() {
+            const overlay = document.getElementById('darkness-overlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.style.opacity = '1', 10);
+        }
+
+        const handle = document.getElementById('lever-handle');
+        const track = document.getElementById('lever-track');
+        let dragging = false;
+
+        const moveLever = (y) => {
+            if(!dragging) return;
+            let rect = track.getBoundingClientRect();
+            let val = y - rect.top - 25;
+            if(val < 5) val = 5; if(val > 170) val = 170;
+            handle.style.top = val + 'px';
+            if(val > 160) { dragging = false; finishLever(); }
+        };
+
+        handle.addEventListener('mousedown', () => dragging=true);
+        window.addEventListener('mouseup', () => { dragging=false; if(parseInt(handle.style.top)<160) handle.style.top='5px'; });
+        window.addEventListener('mousemove', (e) => moveLever(e.clientY));
+        
+        handle.addEventListener('touchstart', (e) => { dragging=true; });
+        window.addEventListener('touchend', () => { dragging=false; if(parseInt(handle.style.top)<160) handle.style.top='5px'; });
+        window.addEventListener('touchmove', (e) => { e.preventDefault(); moveLever(e.touches[0].clientY); }, {passive:false});
+
+        function finishLever() {
+            const overlay = document.getElementById('darkness-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                nextScreen('screen-final');
+                document.querySelectorAll('.corner-rose').forEach(r => r.style.opacity = '1');
+            }, 1000);
+        }
+
+
+        /* --- FINALE REVEAL --- */
+        function revealHeart() {
+            const box = document.getElementById('final-box');
+            const txt = document.getElementById('click-text');
+            const content = document.getElementById('final-content');
+            
+            if(box.classList.contains('open')) return;
+
+            txt.style.display = 'none';
+            box.classList.add('open');
+            setTimeout(() => {
+                content.style.display = 'block';
+                spawnSparkles();
+            }, 500);
+        }
+
+        function spawnSparkles() {
+            // Burst effect using the canvas
+            const rect = document.getElementById('final-box').getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for(let i=0; i<60; i++) {
+                let s = new Petal(); 
+                s.x = centerX; s.y = centerY;
+                s.size = Math.random() * 4 + 1;
+                s.speedY = (Math.random() - 0.5) * 15; // Explosive Y
+                s.sway = (Math.random() - 0.5) * 15;   // Explosive X
+                s.color = Math.random() > 0.5 ? '#f3cf7a' : '#ff0a43'; // Gold & Red
+                
+                // Override update for explosion physics
+                s.life = 100;
+                s.update = function() {
+                    this.x += this.sway;
+                    this.y += this.speedY;
+                    this.life--;
+                    this.size *= 0.95; // Shrink
+                };
+                s.draw = function() {
+                    if(this.life <= 0) return;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                };
+                petals.push(s);
+            }
+        }
+    </script>
+</body>
+</html>
